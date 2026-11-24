@@ -1,71 +1,106 @@
 # CrowdPulse AI
 
-**Real-time AI crowd monitoring and public-safety prototype**
+**Camera-to-dashboard crowd monitoring prototype**
 
-CrowdPulse AI explores a camera-to-dashboard pipeline using an Android camera client, a FastAPI backend, WebSocket frame transport, YOLO-based person detection, OpenCV heatmaps, crowd-density classification, and alert presentation.
+CrowdPulse AI explores a real-time pipeline that captures camera frames on an Android device, streams them to a FastAPI service, detects people with YOLO, derives crowd-density signals, and presents updates on a browser dashboard.
 
-## Core workflow
+This is a development/hackathon prototype—not a certified public-safety or emergency-response system.
+
+## System flow
 
 ```text
-Android camera
-    → frame capture and JPEG encoding
-    → WebSocket transport
-    → FastAPI session/frame handling
-    → YOLO person detection
-    → crowd count and density classification
-    → OpenCV heatmap
-    → dashboard updates and alerts
+Android camera (Kotlin / CameraX)
+        |
+        | JPEG frames over WebSocket
+        v
+FastAPI backend
+        |
+        +--> YOLO person detection
+        +--> Crowd count and density classification
+        +--> OpenCV heatmap generation
+        |
+        v
+WebSocket updates
+        |
+        v
+Browser dashboard and alerts
 ```
 
-## Capabilities represented in this repository
+## Components
 
-- Android camera client using Kotlin, Jetpack Compose and Camera2.
-- WebSocket streaming of camera frames to the backend.
-- FastAPI session management and frame routing.
-- YOLO-based person detection and OpenCV heatmap processing.
-- Three-level crowd-density classification.
-- Dashboard visualization, reconnect behavior and alert presentation.
-- Optional AI-generated alert text and browser speech output.
-- Backend containerization support.
+| Component | Location | Responsibility |
+|---|---|---|
+| Android client | `app/` | Camera capture, frame preparation, and WebSocket client |
+| Inference/API service | `backend/` | FastAPI sessions, frame handling, YOLO inference, and heatmap processing |
+| Web dashboard | `web/` | Browser-based monitoring interface |
+| Architecture notes | `architecture_guide.md` | Component and data-flow explanation |
 
-## Repository layout
+## Technology
 
-- `app/` — Android application source.
-- `backend/` — FastAPI server and backend requirements.
-- `web/` — web dashboard source and related assets.
+- **Android:** Kotlin, Jetpack Compose, CameraX, OkHttp WebSockets
+- **Backend:** Python, FastAPI, Ultralytics YOLO, OpenCV, NumPy
+- **Dashboard:** HTML, CSS, and JavaScript
+- **Transport:** WebSockets
 
-## Local development
+## Run the backend
 
-### Backend
+### Prerequisites
+- Python 3.10+
+- A machine with sufficient memory/compute for the selected YOLO model
+- Android Studio for the mobile client
 
-Use Python 3.10+ (confirm the exact supported version against the pinned dependencies).
+### Install dependencies
+
+From the repository root:
 
 ```bash
 python -m venv .venv
 # Windows: .venv\Scripts\activate
 # macOS/Linux: source .venv/bin/activate
+python -m pip install --upgrade pip
 pip install -r backend/requirements.txt
 ```
 
-Configure required environment variables locally. Never commit real API keys, tokens, credentials, or service-account files.
+### Start the API
 
-The backend Dockerfile is available at `backend/Dockerfile`. Review its build context and required model/assets before building.
+```bash
+cd backend
+uvicorn server:app --host 0.0.0.0 --port 8000 --reload
+```
 
-### Android
+The backend loads `yolov8m.pt` when running local inference. The optional `ML_NODE_URL` environment variable switches the code into relay mode. Model availability, hardware requirements, and first-run model setup depend on the environment.
 
-Open the repository in Android Studio, allow Gradle to sync, configure required local settings, then run the app on a compatible device/emulator with camera permission.
+## Open the dashboard
 
-## Engineering notes
+From the repository root, serve the static dashboard:
 
-- Camera frames can be large; production deployments should enforce payload limits, authentication, backpressure, and bounded buffering.
-- Real-time inference performance depends on hardware, model weights, frame size, and concurrency. No throughput or latency guarantee is claimed here.
-- Treat AI-generated safety messages as advisory. A prototype should not be used as the sole basis for real-world emergency decisions.
-- Keep sample input media separate from generated test output. Large generated videos, local environments, IDE state, and diagnostic logs should not be committed.
+```bash
+python -m http.server 5500 --directory web
+```
 
-## Cleanup policy
+Then open http://localhost:5500. Configure the dashboard and Android client to use the backend host reachable from their devices; `localhost` on a phone refers to the phone itself, not your development computer.
 
-Python virtual environments, caches, IDE-local state, diagnostic logs, and generated inference output are excluded by `.gitignore`. Sample source media and the Android APK are retained in this cleanup because they may be intentional demo inputs/deliverables.
+## Run the Android client
 
-## Status
+1. Open the repository in Android Studio.
+2. Allow Gradle to sync.
+3. Configure the backend address for the device/emulator environment.
+4. Run on a compatible Android device or emulator and grant camera permission.
 
-This is a development/hackathon prototype. Validate setup instructions, model availability, and end-to-end behavior in your own environment before relying on the application.
+The repository includes Gradle wrapper scripts, so use `gradlew.bat` on Windows or `./gradlew` on macOS/Linux for Gradle tasks.
+
+## Engineering and safety considerations
+
+- The backend currently keeps session state in process memory; it is not a horizontally scalable session store.
+- Configure authentication, strict CORS origins, WebSocket authorization, payload limits, and bounded queues before any public deployment.
+- Detection quality and latency depend on camera placement, lighting, model weights, frame size, and hardware.
+- AI-generated alert text is advisory. Do not use this prototype as the sole basis for crowd-control, evacuation, or emergency decisions.
+- Keep generated videos, model caches, virtual environments, logs, and secrets out of Git.
+
+## Project status
+
+Prototype / active development. Validate end-to-end Android, backend, and dashboard behavior in the target environment before presenting performance claims.
+
+## License
+
+See the repository license file if one is added; no license grant is implied by public visibility.
