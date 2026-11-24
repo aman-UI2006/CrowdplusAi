@@ -1,137 +1,71 @@
 # CrowdPulse AI
 
-### Real-Time AI Crowd Monitoring & Public Safety System
+**Real-time AI crowd monitoring and public-safety prototype**
 
-CrowdPulse AI is an AI-powered crowd monitoring platform that combines an Android camera node, FastAPI backend, YOLO-based person detection, OpenCV heatmap generation, WebSocket streaming, and AI-powered alerts to provide real-time crowd density analysis and public-safety monitoring.
+CrowdPulse AI explores a camera-to-dashboard pipeline using an Android camera client, a FastAPI backend, WebSocket frame transport, YOLO-based person detection, OpenCV heatmaps, crowd-density classification, and alert presentation.
 
-## 🚀 Key Features
-
-- 📱 **Android Camera Node** — Captures live camera frames using Kotlin, Jetpack Compose, and Camera2.
-- ⚡ **Real-Time WebSocket Streaming** — Streams JPEG frames from Android to the FastAPI backend with sender-side throttling.
-- 👁️ **AI Person Detection** — Uses Ultralytics YOLO for real-time person detection at `640×640`.
-- 🔥 **Crowd Heatmap** — Generates OpenCV-based density heatmaps from detected person locations.
-- 🚦 **3-Level Crowd Classification** — Classifies crowd conditions as GREEN, BLUE, or RED based on detected people.
-- 🤖 **AI Security Alerts** — Uses Groq Llama 3.1 8B to generate actionable crowd-safety messages.
-- 🔊 **Voice Alerts** — Converts AI-generated alerts into browser speech using Web Speech API.
-- 🔄 **Automatic Reconnection** — WebSocket clients automatically reconnect after connection loss.
-- 🧠 **Latest-Frame Processing** — Keeps the newest frame to avoid unnecessary processing of stale frames.
-- 🌐 **Live Web Dashboard** — Displays camera feed, crowd count, heatmap, density status, and session information.
-- 🔐 **Session-Based Architecture** — Uses 6-character session codes for connecting camera and dashboard clients.
-- ☁️ **Distributed ML Inference** — Supports forwarding inference requests to an external ML node.
-- 🐳 **Docker Support** — Backend can be containerized for deployment.
-
----
-
-## 🏗️ System Architecture
+## Core workflow
 
 ```text
-                    ┌─────────────────────────┐
-                    │     Android Camera      │
-                    │                         │
-                    │ Kotlin + Camera2       │
-                    │ Jetpack Compose        │
-                    └────────────┬────────────┘
-                                 │
-                                 │ WebSocket
-                                 │ JPEG Frames
-                                 ▼
-                    ┌─────────────────────────┐
-                    │      FastAPI Server     │
-                    │                         │
-                    │ Session Management      │
-                    │ Frame Buffering         │
-                    │ WebSocket Routing       │
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │     AI Inference        │
-                    │                         │
-                    │ YOLO Person Detection  │
-                    │ OpenCV Processing      │
-                    └────────────┬────────────┘
-                                 │
-                    ┌────────────┴────────────┐
-                    ▼                         ▼
-          ┌──────────────────┐      ┌──────────────────┐
-          │ Crowd Analytics  │      │ Heatmap Engine   │
-          │                  │      │                  │
-          │ Person Count     │      │ Density Mapping  │
-          │ Density Level    │      │ OpenCV Heatmap   │
-          └────────┬─────────┘      └────────┬─────────┘
-                   │                         │
-                   └────────────┬────────────┘
-                                ▼
-                    ┌─────────────────────────┐
-                    │     Web Dashboard       │
-                    │                         │
-                    │ Live Camera             │
-                    │ Crowd Count             │
-                    │ Density Status          │
-                    │ Heatmap                 │
-                    └────────────┬────────────┘
-                                 │
-                                 ▼
-                    ┌─────────────────────────┐
-                    │     AI Alert Engine      │
-                    │                         │
-                    │ Groq + Llama 3.1 8B    │
-                    │ Voice Notifications    │
-                    └─────────────────────────┘
+Android camera
+    → frame capture and JPEG encoding
+    → WebSocket transport
+    → FastAPI session/frame handling
+    → YOLO person detection
+    → crowd count and density classification
+    → OpenCV heatmap
+    → dashboard updates and alerts
+```
 
+## Capabilities represented in this repository
 
-🔄 Real-Time Processing Pipeline
+- Android camera client using Kotlin, Jetpack Compose and Camera2.
+- WebSocket streaming of camera frames to the backend.
+- FastAPI session management and frame routing.
+- YOLO-based person detection and OpenCV heatmap processing.
+- Three-level crowd-density classification.
+- Dashboard visualization, reconnect behavior and alert presentation.
+- Optional AI-generated alert text and browser speech output.
+- Backend containerization support.
 
-Android Camera
-      ↓
-Camera2 Frame Capture
-      ↓
-YUV Frame Processing
-      ↓
-JPEG Compression
-      ↓
-WebSocket Streaming
-      ↓
-FastAPI WebSocket Server
-      ↓
-Latest-Frame Buffer
-      ↓
-YOLO Person Detection
-      ↓
-Person Count
-      ↓
-Crowd Density Classification
-      ↓
-OpenCV Heatmap Generation
-      ↓
-Dashboard WebSocket
-      ↓
-Live Visualization
-      ↓
-AI Safety Alert
-      ↓
-Voice Notification
+## Repository layout
 
+- `app/` — Android application source.
+- `backend/` — FastAPI server and backend requirements.
+- `web/` — web dashboard source and related assets.
 
-👁️ Computer Vision Pipeline
-CrowdPulse AI processes incoming camera frames through the following pipeline:
+## Local development
 
-Input JPEG Frame
-      ↓
-OpenCV Decode
-      ↓
-Resize to 640×640
-      ↓
-YOLO Inference
-      ↓
-Person Detection
-      ↓
-Bounding Boxes
-      ↓
-Person Count
-      ↓
-Density Classification
-      ↓
-Heatmap Generation
-      ↓
-Annotated Output
+### Backend
+
+Use Python 3.10+ (confirm the exact supported version against the pinned dependencies).
+
+```bash
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
+pip install -r backend/requirements.txt
+```
+
+Configure required environment variables locally. Never commit real API keys, tokens, credentials, or service-account files.
+
+The backend Dockerfile is available at `backend/Dockerfile`. Review its build context and required model/assets before building.
+
+### Android
+
+Open the repository in Android Studio, allow Gradle to sync, configure required local settings, then run the app on a compatible device/emulator with camera permission.
+
+## Engineering notes
+
+- Camera frames can be large; production deployments should enforce payload limits, authentication, backpressure, and bounded buffering.
+- Real-time inference performance depends on hardware, model weights, frame size, and concurrency. No throughput or latency guarantee is claimed here.
+- Treat AI-generated safety messages as advisory. A prototype should not be used as the sole basis for real-world emergency decisions.
+- Keep sample input media separate from generated test output. Large generated videos, local environments, IDE state, and diagnostic logs should not be committed.
+
+## Cleanup policy
+
+Python virtual environments, caches, IDE-local state, diagnostic logs, and generated inference output are excluded by `.gitignore`. Sample source media and the Android APK are retained in this cleanup because they may be intentional demo inputs/deliverables.
+
+## Status
+
+This is a development/hackathon prototype. Validate setup instructions, model availability, and end-to-end behavior in your own environment before relying on the application.
